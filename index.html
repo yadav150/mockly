@@ -99,96 +99,81 @@
         </div>
     </footer>
 
-    <!-- ========== LOGIN / SIGNUP MODAL ========== -->
-    <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <button class="modal-close" id="modalClose" aria-label="Close dialog">&times;</button>
+   <!-- ========== LOGIN / SIGNUP MODAL ========== -->
+<div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <button class="modal-close" id="modalClose" aria-label="Close dialog">&times;</button>
 
-            <!-- LOGIN FORM -->
-            <div id="loginForm">
-                <h3 id="modalTitle">Login</h3>
-                <div class="form-group">
-                    <label for="loginEmail">Email</label>
-                    <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email">
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
-                </div>
-                <!-- CAPTCHA -->
-                <div class="form-group captcha-group">
-                    <label>Security Check</label>
-                    <div class="captcha-box">
-                        <span id="captchaQuestionLogin">3 + 5 = ?</span>
-                        <input type="text" id="captchaInputLogin" placeholder="Answer" autocomplete="off">
-                    </div>
-                </div>
-                <button class="btn btn-primary btn-full" id="loginSubmitBtn">Login</button>
-                <div class="google-btn-wrap">
-                    <button class="btn google-btn" id="googleSignInBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="..."/></svg>
-                        Sign in with Google
-                    </button>
-                </div>
-                <p class="modal-toggle">
-                    <a href="#" id="forgotPasswordLink">Forgot password?</a>
-                </p>
-                <p class="modal-toggle">Don't have an account? <button id="switchToSignup">Sign Up</button></p>
+        <!-- LOGIN FORM -->
+        <div id="loginForm">
+            <h3 id="modalTitle">Login</h3>
+            <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email">
             </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+            </div>
+            <!-- CAPTCHA -->
+            <div class="form-group captcha-group">
+                <label>Security Check</label>
+                <div class="captcha-box">
+                    <span id="captchaQuestionLogin">3 + 5 = ?</span>
+                    <input type="text" id="captchaInputLogin" placeholder="Answer" autocomplete="off">
+                </div>
+            </div>
+            <button class="btn btn-primary btn-full" id="loginSubmitBtn">Login</button>
+            <div class="google-btn-wrap">
+                <button class="btn google-btn" id="googleSignInBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="..."/></svg>
+                    Sign in with Google
+                </button>
+            </div>
+            <p class="modal-toggle">
+                <a href="forgot-password.html" id="forgotPasswordLink">Forgot password?</a>
+            </p>
+            <p class="modal-toggle">Don't have an account? <button id="switchToSignup">Sign Up</button></p>
+        </div>
 
-            <!-- SIGNUP FORM -->
-            <div id="signupForm" class="form-hidden">
-                <h3>Sign Up</h3>
-                <div class="form-group">
-                    <label for="signupName">Full Name</label>
-                    <input type="text" id="signupName" placeholder="Your full name" autocomplete="name">
-                </div>
-                <div class="form-group">
-                    <label for="signupEmail">Email</label>
-                    <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email">
-                </div>
-                <div class="form-group">
-                    <label for="signupPassword">Password</label>
-                    <input type="password" id="signupPassword" placeholder="Create a password" autocomplete="new-password">
-                </div>
-                <div class="form-group">
-                    <label for="signupConfirm">Confirm Password</label>
-                    <input type="password" id="signupConfirm" placeholder="Re-enter password" autocomplete="new-password">
-                </div>
-                <!-- CAPTCHA -->
-                <div class="form-group captcha-group">
-                    <label>Security Check</label>
-                    <div class="captcha-box">
-                        <span id="captchaQuestionSignup">7 + 2 = ?</span>
-                        <input type="text" id="captchaInputSignup" placeholder="Answer" autocomplete="off">
-                    </div>
-                </div>
-                <button class="btn btn-primary btn-full" id="signupSubmitBtn">Create Account</button>
-                <div class="google-btn-wrap">
-                    <button class="btn google-btn" id="googleSignUpBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24">...</svg>
-                        Sign up with Google
-                    </button>
-                </div>
-                <p class="modal-toggle">Already have an account? <button id="switchToLogin">Login</button></p>
+        <!-- SIGNUP FORM -->
+        <div id="signupForm" class="form-hidden">
+            <h3>Sign Up</h3>
+            <div class="form-group">
+                <label for="signupName">Full Name</label>
+                <input type="text" id="signupName" placeholder="Your full name" autocomplete="name">
             </div>
-
-            <!-- FORGOT PASSWORD FORM -->
-            <div id="forgotForm" class="form-hidden">
-                <h3>Reset Password</h3>
-                <p style="margin-bottom:1.5rem; font-size:0.9rem; color:var(--text-muted);">
-                    Enter your email address and we'll send you a link to reset your password.
-                </p>
-                <div class="form-group">
-                    <label for="forgotEmail">Email</label>
-                    <input type="email" id="forgotEmail" placeholder="you@example.com" autocomplete="email">
-                </div>
-                <button class="btn btn-primary btn-full" id="forgotSubmitBtn">Send Reset Email</button>
-                <p id="forgotMessage" style="text-align:center; margin-top:0.75rem; font-size:0.9rem;"></p>
-                <p class="modal-toggle"><button id="backToLogin">← Back to Login</button></p>
+            <div class="form-group">
+                <label for="signupEmail">Email</label>
+                <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email">
             </div>
+            <div class="form-group">
+                <label for="signupPassword">Password</label>
+                <input type="password" id="signupPassword" placeholder="Create a password" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label for="signupConfirm">Confirm Password</label>
+                <input type="password" id="signupConfirm" placeholder="Re-enter password" autocomplete="new-password">
+            </div>
+            <!-- CAPTCHA -->
+            <div class="form-group captcha-group">
+                <label>Security Check</label>
+                <div class="captcha-box">
+                    <span id="captchaQuestionSignup">7 + 2 = ?</span>
+                    <input type="text" id="captchaInputSignup" placeholder="Answer" autocomplete="off">
+                </div>
+            </div>
+            <button class="btn btn-primary btn-full" id="signupSubmitBtn">Create Account</button>
+            <div class="google-btn-wrap">
+                <button class="btn google-btn" id="googleSignUpBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24">...</svg>
+                    Sign up with Google
+                </button>
+            </div>
+            <p class="modal-toggle">Already have an account? <button id="switchToLogin">Login</button></p>
         </div>
     </div>
+</div>
 
     <!-- Firebase + Custom Scripts -->
     <script src="firebase.js"></script>
