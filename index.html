@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mockly — Practice Smarter. Score Better.</title>
     <link rel="stylesheet" href="Style.css">
+    <!-- Firebase SDKs (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
@@ -180,7 +183,7 @@
             </div>
         </section>
 
-        <!-- Test Page (hidden by default, shown during quiz) -->
+        <!-- Test Page (hidden by default) -->
         <section class="section test-page" id="testPage" style="display:none;" aria-labelledby="test-heading">
             <div class="container">
                 <div class="test-container" id="testContainer">
@@ -189,7 +192,7 @@
             </div>
         </section>
 
-        <!-- Results Page (hidden by default, shown after quiz) -->
+        <!-- Results Page (hidden by default) -->
         <section class="section results-page" id="resultsPage" style="display:none;" aria-labelledby="results-heading">
             <div class="container">
                 <div class="results-container" id="resultsContainer">
@@ -283,6 +286,8 @@
         </div>
     </div>
 
+    <!-- Firebase Authentication & Frontend Scripts -->
+    <script src="firebase.js"></script>
     <script src="Script.js" defer></script>
 </body>
 </html>
