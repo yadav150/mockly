@@ -29,8 +29,51 @@ function refreshCaptchas() {
   if (signupInput) signupInput.value = '';
 }
 
+// Global function to open modal with a specific form
+function openModal(type = 'login') {
+  const overlay = document.getElementById('modalOverlay');
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+  const forgotForm = document.getElementById('forgotForm');
+
+  overlay.classList.add('active');
+  overlay.setAttribute('aria-hidden', 'false');
+  refreshCaptchas();
+
+  // Hide all forms first
+  loginForm.style.display = 'none';
+  signupForm.style.display = 'none';
+  if (forgotForm) forgotForm.style.display = 'none';
+
+  if (type === 'login') {
+    loginForm.style.display = '';
+  } else if (type === 'signup') {
+    signupForm.style.display = '';
+  } else if (type === 'forgot') {
+    if (forgotForm) forgotForm.style.display = '';
+    const loginEmail = document.getElementById('loginEmail');
+    const forgotEmail = document.getElementById('forgotEmail');
+    if (loginEmail && forgotEmail) forgotEmail.value = loginEmail.value;
+  }
+}
+
+function closeModal() {
+  const overlay = document.getElementById('modalOverlay');
+  overlay.classList.remove('active');
+  overlay.setAttribute('aria-hidden', 'true');
+  // Clear all input fields
+  ['loginEmail','loginPassword','captchaInputLogin',
+   'signupName','signupEmail','signupPassword','signupConfirm','captchaInputSignup',
+   'forgotEmail'].forEach(id => {
+     const el = document.getElementById(id);
+     if (el) el.value = '';
+   });
+  const msg = document.getElementById('forgotMessage');
+  if (msg) msg.textContent = '';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Mobile menu
+  // Mobile menu toggle
   const hamburger = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobileMenu');
   hamburger.addEventListener('click', () => {
@@ -38,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileMenu.classList.toggle('active');
   });
 
-  // Smooth scroll
+  // Smooth scroll for anchor links
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
       e.preventDefault();
@@ -51,64 +94,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  setupModal();
+  // Initial modal setup
+  setupModalEventListeners();
 
+  // Firebase auth state listener
   if (typeof initAuthListener === 'function') {
     initAuthListener(updateUIForAuth);
   }
 });
 
-function setupModal() {
-  const overlay = document.getElementById('modalOverlay');
-  const loginForm = document.getElementById('loginForm');
-  const signupForm = document.getElementById('signupForm');
-  const forgotForm = document.getElementById('forgotForm');
-
-  function openModal(type = 'login') {
-    overlay.classList.add('active');
-    overlay.setAttribute('aria-hidden', 'false');
-    refreshCaptchas();
-
-    loginForm.style.display = 'none';
-    signupForm.style.display = 'none';
-    if (forgotForm) forgotForm.style.display = 'none';
-
-    if (type === 'login') loginForm.style.display = '';
-    else if (type === 'signup') signupForm.style.display = '';
-    else if (type === 'forgot') {
-      if (forgotForm) forgotForm.style.display = '';
-      // Pre-fill forgot email from login field if possible
-      const loginEmail = document.getElementById('loginEmail');
-      const forgotEmail = document.getElementById('forgotEmail');
-      if (loginEmail && forgotEmail) forgotEmail.value = loginEmail.value;
-    }
-  }
-
-  function closeModal() {
-    overlay.classList.remove('active');
-    overlay.setAttribute('aria-hidden', 'true');
-    ['loginEmail','loginPassword','captchaInputLogin','signupName','signupEmail','signupPassword','signupConfirm','captchaInputSignup','forgotEmail'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    const msg = document.getElementById('forgotMessage');
-    if (msg) msg.textContent = '';
-  }
-
-  // Bind openers
-  document.getElementById('btnLogin').addEventListener('click', () => openModal('login'));
-  document.getElementById('btnSignup').addEventListener('click', () => openModal('signup'));
-  document.getElementById('btnLoginMobile').addEventListener('click', () => openModal('login'));
-  document.getElementById('btnSignupMobile').addEventListener('click', () => openModal('signup'));
-
+function setupModalEventListeners() {
+  // Close button
   document.getElementById('modalClose').addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  // Overlay click
+  document.getElementById('modalOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('modalOverlay')) closeModal();
+  });
 
-  // Switch forms
+  // Form switching
   document.getElementById('switchToSignup').addEventListener('click', () => openModal('signup'));
   document.getElementById('switchToLogin').addEventListener('click', () => openModal('login'));
-
-  // Forgot password
   document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
     e.preventDefault();
     openModal('forgot');
@@ -170,34 +175,41 @@ function setupModal() {
     }
   });
 
-  // Google sign-in
+  // Google sign‑in
   async function googleAuth() {
     try {
       await signInWithGoogle();
       window.location.href = 'dashboard.html';
-    } catch (e) { alert('Google sign-in failed: ' + e.message); }
+    } catch (e) { alert('Google sign‑in failed: ' + e.message); }
   }
   document.getElementById('googleSignInBtn').addEventListener('click', googleAuth);
   document.getElementById('googleSignUpBtn').addEventListener('click', googleAuth);
 }
 
+// Update header buttons based on auth state
 function updateUIForAuth(user) {
   const navActions = document.querySelector('.nav-actions');
   const mobileActions = document.querySelector('.mobile-actions');
   if (!navActions || !mobileActions) return;
+
   if (user) {
+    // Logged in: show Dashboard and Logout
     navActions.innerHTML = <button class="btn btn-outline" id="btnDashboard">Dashboard</button><button class="btn btn-primary" id="btnLogout">Logout</button>;
     mobileActions.innerHTML = <button class="btn btn-outline" id="btnDashboardM">Dashboard</button><button class="btn btn-primary" id="btnLogoutM">Logout</button>;
+
     document.getElementById('btnDashboard').addEventListener('click', () => window.location.href = 'dashboard.html');
     document.getElementById('btnDashboardM').addEventListener('click', () => window.location.href = 'dashboard.html');
     document.getElementById('btnLogout').addEventListener('click', () => logoutUser());
     document.getElementById('btnLogoutM').addEventListener('click', () => logoutUser());
   } else {
+    // Not logged in: show Login / Sign Up (with correct modal opening)
     navActions.innerHTML = <button class="btn btn-outline" id="btnLogin">Login</button><button class="btn btn-primary" id="btnSignup">Sign Up</button>;
     mobileActions.innerHTML = <button class="btn btn-outline" id="btnLoginMobile">Login</button><button class="btn btn-primary" id="btnSignupMobile">Sign Up</button>;
-    document.getElementById('btnLogin').addEventListener('click', () => document.getElementById('modalOverlay').classList.add('active'));
-    document.getElementById('btnSignup').addEventListener('click', () => document.getElementById('modalOverlay').classList.add('active'));
-    document.getElementById('btnLoginMobile').addEventListener('click', () => document.getElementById('modalOverlay').classList.add('active'));
-    document.getElementById('btnSignupMobile').addEventListener('click', () => document.getElementById('modalOverlay').classList.add('active'));
+
+    // Use global openModal so the correct form is displayed
+    document.getElementById('btnLogin').addEventListener('click', () => openModal('login'));
+    document.getElementById('btnSignup').addEventListener('click', () => openModal('signup'));
+    document.getElementById('btnLoginMobile').addEventListener('click', () => openModal('login'));
+    document.getElementById('btnSignupMobile').addEventListener('click', () => openModal('signup'));
   }
 }
