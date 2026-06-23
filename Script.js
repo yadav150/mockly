@@ -1,6 +1,8 @@
 /*********************************************
  * Mockly Frontend Logic
- * Firebase Auth, dynamic grids, quiz engine
+ * Firebase Auth, dynamic grids, quiz engine,
+ * separate login / signup with CAPTCHA,
+ * redirect to dashboard on auth.
  *********************************************/
 
 // Sample Data (same as before)
@@ -54,6 +56,35 @@ let testState = {
   timerSeconds:0, timerInterval:null, topicName:'', totalQuestions:0, totalTime:0,
 };
 
+// ========== CAPTCHA UTILS ==========
+function generateCaptcha() {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  return { question: `What is ${a} + ${b}?`, answer: (a + b).toString() };
+}
+
+// Store captcha answers for both forms
+let loginCaptchaAnswer = '';
+let signupCaptchaAnswer = '';
+
+function refreshCaptchas() {
+  const loginCap = generateCaptcha();
+  const signupCap = generateCaptcha();
+  loginCaptchaAnswer = loginCap.answer;
+  signupCaptchaAnswer = signupCap.answer;
+  
+  const loginQ = document.getElementById('captchaQuestionLogin');
+  const signupQ = document.getElementById('captchaQuestionSignup');
+  if (loginQ) loginQ.textContent = loginCap.question;
+  if (signupQ) signupQ.textContent = signupCap.question;
+  
+  // Clear inputs
+  const loginInput = document.getElementById('captchaInputLogin');
+  const signupInput = document.getElementById('captchaInputSignup');
+  if (loginInput) loginInput.value = '';
+  if (signupInput) signupInput.value = '';
+}
+
 // ========== DOM READY ==========
 document.addEventListener('DOMContentLoaded',()=>{
   renderTopics();
@@ -66,9 +97,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupModal();
   setupMobileMenu();
   if(typeof initAuthListener==='function') initAuthListener(updateUIForAuth);
+  refreshCaptchas(); // initial captcha
 });
 
-// ========== RENDER FUNCTIONS ==========
+// ========== RENDER FUNCTIONS (unchanged) ==========
 function getBadge(diff){ const cls = diff==='Easy'?'badge-easy':diff==='Medium'?'badge-medium':'badge-hard'; return `<span class="badge ${cls}">${diff}</span>`; }
 
 function renderTopics(){
@@ -147,7 +179,16 @@ function setupSmoothScroll(){
     e.preventDefault();
     const id=this.getAttribute('href').substring(1);
     const el=document.getElementById(id);
-    if(el){ el.scrollIntoView({behavior:'smooth'}); history.pushState(null,null,`#${id}`); }
+    if(el){
+      // Hide test/results pages, show main sections
+      document.getElementById('testPage').style.display = 'none';
+      document.getElementById('resultsPage').style.display = 'none';
+      document.querySelectorAll('.section').forEach(s => {
+        if(s.id !== 'testPage' && s.id !== 'resultsPage') s.style.display = '';
+      });
+      el.scrollIntoView({behavior:'smooth'});
+      history.pushState(null,null,`#${id}`);
+    }
     document.getElementById('mobileMenu').classList.remove('active');
     document.getElementById('hamburger').classList.remove('open');
   }));
@@ -160,7 +201,7 @@ function setupMobileMenu(){
   menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{ ham.classList.remove('open'); menu.classList.remove('active'); }));
 }
 
-// ========== MODAL + FIREBASE AUTH ==========
+// ========== MODAL + FIREBASE AUTH (with CAPTCHA) ==========
 function setupModal(){
   const overlay=document.getElementById('modalOverlay'),
         btnLogin=document.getElementById('btnLogin'), btnSignup=document.getElementById('btnSignup'),
@@ -173,12 +214,23 @@ function setupModal(){
 
   function openModal(type='login'){
     overlay.classList.add('active'); overlay.setAttribute('aria-hidden','false');
-    if(type==='login'){ loginForm.style.display=''; signupForm.style.display='none'; document.getElementById('modalTitle').textContent='Login'; }
-    else { loginForm.style.display='none'; signupForm.style.display=''; signupForm.querySelector('h3').textContent='Sign Up'; }
+    refreshCaptchas(); // refresh captcha every time modal opens
+    if(type==='login'){
+      loginForm.style.display=''; signupForm.style.display='none';
+      document.getElementById('modalTitle').textContent='Login';
+    } else {
+      loginForm.style.display='none'; signupForm.style.display='';
+      signupForm.querySelector('h3').textContent='Sign Up';
+    }
   }
+
   function closeModal(){
     overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true');
-    ['loginEmail','loginPassword','signupName','signupEmail','signupPassword'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    // Clear all inputs including captchas
+    ['loginEmail','loginPassword','captchaInputLogin','signupName','signupEmail','signupPassword','captchaInputSignup'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.value='';
+    });
   }
 
   btnLogin.addEventListener('click',()=>openModal('login'));
@@ -188,56 +240,118 @@ function setupModal(){
   closeBtn.addEventListener('click',closeModal);
   overlay.addEventListener('click',e=>{ if(e.target===overlay) closeModal(); });
 
-  switchSignup.addEventListener('click',()=>{ loginForm.style.display='none'; signupForm.style.display=''; signupForm.querySelector('h3').textContent='Sign Up'; });
-  switchLogin.addEventListener('click',()=>{ signupForm.style.display='none'; loginForm.style.display=''; document.getElementById('modalTitle').textContent='Login'; });
+  switchSignup.addEventListener('click',()=>{
+    refreshCaptchas();
+    loginForm.style.display='none'; signupForm.style.display='';
+    signupForm.querySelector('h3').textContent='Sign Up';
+  });
+  switchLogin.addEventListener('click',()=>{
+    refreshCaptchas();
+    signupForm.style.display='none'; loginForm.style.display='';
+    document.getElementById('modalTitle').textContent='Login';
+  });
 
-  // Email/Password Login
+  // ---------- LOGIN ----------
   loginSubmit.addEventListener('click',async()=>{
-    const email=document.getElementById('loginEmail').value.trim(), pass=document.getElementById('loginPassword').value.trim();
+    const email=document.getElementById('loginEmail').value.trim();
+    const pass=document.getElementById('loginPassword').value.trim();
+    const captchaInput=document.getElementById('captchaInputLogin').value.trim();
+
     if(!email||!pass) return alert('Please fill all fields.');
-    try{ await loginUser(email,pass); closeModal(); }catch(e){ alert('Login failed: '+e.message); }
+    if(captchaInput !== loginCaptchaAnswer) {
+      alert('Incorrect CAPTCHA. Please try again.');
+      refreshCaptchas();
+      return;
+    }
+    try{
+      await loginUser(email,pass);
+      // On success, redirect to dashboard
+      window.location.href = 'dashboard.html';
+    }catch(e){
+      alert('Login failed: '+e.message);
+    }
   });
-  // Email/Password Signup
+
+  // ---------- SIGNUP ----------
   signupSubmit.addEventListener('click',async()=>{
-    const name=document.getElementById('signupName').value.trim(), email=document.getElementById('signupEmail').value.trim(), pass=document.getElementById('signupPassword').value.trim();
+    const name=document.getElementById('signupName').value.trim();
+    const email=document.getElementById('signupEmail').value.trim();
+    const pass=document.getElementById('signupPassword').value.trim();
+    const captchaInput=document.getElementById('captchaInputSignup').value.trim();
+
     if(!name||!email||!pass) return alert('All fields required.');
-    if(pass.length<8) return alert('Password must be at least 8 characters.');
-    try{ await signupUser(email,pass,name); closeModal(); }catch(e){ alert('Signup failed: '+e.message); }
+    if(pass.length < 8) return alert('Password must be at least 8 characters.');
+    if(captchaInput !== signupCaptchaAnswer) {
+      alert('Incorrect CAPTCHA. Please try again.');
+      refreshCaptchas();
+      return;
+    }
+    try{
+      await signupUser(email,pass,name);
+      // Redirect to dashboard after signup
+      window.location.href = 'dashboard.html';
+    }catch(e){
+      alert('Signup failed: '+e.message);
+    }
   });
-  // Google Sign-In
+
+  // ---------- GOOGLE SIGN-IN ----------
   async function googleAuth(){
-    try{ await signInWithGoogle(); closeModal(); }catch(e){ alert('Google sign-in failed: '+e.message); }
+    try{
+      await signInWithGoogle();
+      window.location.href = 'dashboard.html';
+    }catch(e){
+      alert('Google sign-in failed: '+e.message);
+    }
   }
   googleLogin.addEventListener('click',googleAuth);
   googleSignup.addEventListener('click',googleAuth);
 }
 
-// ========== UI UPDATE ON AUTH STATE ==========
+// ========== UI UPDATE ON AUTH STATE (header buttons) ==========
 function updateUIForAuth(user){
   const navActions=document.querySelector('.nav-actions'), mobileActions=document.querySelector('.mobile-actions');
   if(!navActions||!mobileActions) return;
   if(user){
-    navActions.innerHTML = `<button class="btn btn-outline" id="btnDashboard">Dashboard</button><button class="btn btn-primary" id="btnLogout">Logout</button>`;
-    mobileActions.innerHTML = `<button class="btn btn-outline" id="btnDashboardM">Dashboard</button><button class="btn btn-primary" id="btnLogoutM">Logout</button>`;
-    document.getElementById('btnLogout').addEventListener('click',()=>logoutUser());
-    document.getElementById('btnLogoutM').addEventListener('click',()=>logoutUser());
+    // Show Dashboard + Logout buttons
+    navActions.innerHTML = `
+      <button class="btn btn-outline" id="btnDashboard">Dashboard</button>
+      <button class="btn btn-primary" id="btnLogout">Logout</button>`;
+    mobileActions.innerHTML = `
+      <button class="btn btn-outline" id="btnDashboardM">Dashboard</button>
+      <button class="btn btn-primary" id="btnLogoutM">Logout</button>`;
+
+    document.getElementById('btnDashboard').addEventListener('click', ()=>{
+      window.location.href = 'dashboard.html';
+    });
+    document.getElementById('btnDashboardM').addEventListener('click', ()=>{
+      window.location.href = 'dashboard.html';
+    });
+    document.getElementById('btnLogout').addEventListener('click', ()=>logoutUser());
+    document.getElementById('btnLogoutM').addEventListener('click', ()=>logoutUser());
   } else {
-    navActions.innerHTML = `<button class="btn btn-outline" id="btnLogin">Login</button><button class="btn btn-primary" id="btnSignup">Sign Up</button>`;
-    mobileActions.innerHTML = `<button class="btn btn-outline" id="btnLoginMobile">Login</button><button class="btn btn-primary" id="btnSignupMobile">Sign Up</button>`;
-    // Rebind modal openers because buttons are new
-    document.getElementById('btnLogin').addEventListener('click',()=>document.getElementById('modalOverlay').classList.add('active'));
-    document.getElementById('btnSignup').addEventListener('click',()=>document.getElementById('modalOverlay').classList.add('active'));
-    document.getElementById('btnLoginMobile').addEventListener('click',()=>document.getElementById('modalOverlay').classList.add('active'));
-    document.getElementById('btnSignupMobile').addEventListener('click',()=>document.getElementById('modalOverlay').classList.add('active'));
+    // Not logged in – show Login/Signup
+    navActions.innerHTML = `
+      <button class="btn btn-outline" id="btnLogin">Login</button>
+      <button class="btn btn-primary" id="btnSignup">Sign Up</button>`;
+    mobileActions.innerHTML = `
+      <button class="btn btn-outline" id="btnLoginMobile">Login</button>
+      <button class="btn btn-primary" id="btnSignupMobile">Sign Up</button>`;
+
+    // Rebind modal openers
+    document.getElementById('btnLogin').addEventListener('click', ()=>document.getElementById('modalOverlay').classList.add('active'));
+    document.getElementById('btnSignup').addEventListener('click', ()=>document.getElementById('modalOverlay').classList.add('active'));
+    document.getElementById('btnLoginMobile').addEventListener('click', ()=>document.getElementById('modalOverlay').classList.add('active'));
+    document.getElementById('btnSignupMobile').addEventListener('click', ()=>document.getElementById('modalOverlay').classList.add('active'));
   }
 }
 
-// ========== TEST ENGINE (same as before) ==========
+// ========== TEST ENGINE (unchanged) ==========
 function startTest(name,total,dur){
   const qs=[];
   for(let i=0;i<total;i++){ const q=questionBank[i%questionBank.length]; qs.push({...q,options:[...q.options]}); }
   testState={ active:true, questions:qs, currentIndex:0, answers:{}, timerSeconds:dur*60, timerInterval:null, topicName:name, totalQuestions:total, totalTime:dur*60 };
-  document.querySelectorAll('.section:not(.test-page):not(.results-page)').forEach(s=>s.style.display='none');
+  document.querySelectorAll('.section').forEach(s=>s.style.display='none');
   document.getElementById('testPage').style.display=''; document.getElementById('resultsPage').style.display='none';
   renderTestQuestion(); startTimer(); document.getElementById('testPage').scrollIntoView({behavior:'smooth'});
 }
@@ -308,7 +422,7 @@ function renderResults(){
     <div style="margin-top:1.5rem;"><button class="btn btn-primary" onclick="resetToHome()">Back to Topics</button></div>`;
 }
 function resetToHome(){
-  document.querySelectorAll('.section:not(.test-page):not(.results-page)').forEach(s=>s.style.display='');
+  document.querySelectorAll('.section').forEach(s=>s.style.display='');
   document.getElementById('testPage').style.display='none'; document.getElementById('resultsPage').style.display='none';
   document.getElementById('home').scrollIntoView({behavior:'smooth'});
 }
