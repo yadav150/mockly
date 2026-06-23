@@ -1,6 +1,6 @@
 /*********************************************
  * Mockly – Competitive Exam Prep
- * Firebase Auth + CAPTCHA (no inline forgot pwd)
+ * Firebase Auth + CAPTCHA (modal works now)
  *********************************************/
 
 let loginCaptchaAnswer = '';
@@ -29,6 +29,7 @@ function refreshCaptchas() {
   if (signupInput) signupInput.value = '';
 }
 
+// Global openModal – call this from anywhere
 function openModal(type = 'login') {
   const overlay = document.getElementById('modalOverlay');
   const loginForm = document.getElementById('loginForm');
@@ -81,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Modal listeners
+  // Modal listeners (close buttons, overlay click)
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modalOverlay').addEventListener('click', (e) => {
     if (e.target === document.getElementById('modalOverlay')) closeModal();
@@ -139,9 +140,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('googleSignInBtn').addEventListener('click', googleAuth);
   document.getElementById('googleSignUpBtn').addEventListener('click', googleAuth);
 
-  // Firebase auth listener
+  // Firebase auth listener – updates header buttons
   if (typeof initAuthListener === 'function') {
     initAuthListener(updateUIForAuth);
+  } else {
+    // If Firebase didn't load, still show default buttons
+    updateUIForAuth(null);
   }
 });
 
