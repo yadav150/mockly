@@ -1241,3 +1241,57 @@ main {
         font-size: 0.75rem;
     }
 }
+
+/* ===== GOOGLE BUTTON ===== */
+.google-btn-wrap {
+    margin-top: 1rem;
+}
+
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: #ffffff;
+    color: #444;
+    border: 1px solid #dcdde0;
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 0.65rem;
+}
+
+.google-btn:hover {
+    background: #f2f2f2;
+    border-color: #b0b0b0;
+}
+
+.google-btn svg {
+    flex-shrink: 0;
+}
+
+/* ===== COMPETITIVE EXAMS GRID ===== */
+.exams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.exam-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.exam-card:hover {
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    color: var(--accent);
+}
