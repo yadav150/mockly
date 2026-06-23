@@ -1,10 +1,9 @@
 /*********************************************
  * Mockly Frontend Logic
- * Handles navigation, search, modals,
- * quiz generation, and results display.
+ * Integrated with Firebase Authentication
  *********************************************/
 
-// ========== SAMPLE DATA ==========
+// ========== SAMPLE DATA (unchanged) ==========
 const topicsData = [
   { id: 1, name: 'JavaScript', icon: '📜', count: 120, difficulty: 'Medium' },
   { id: 2, name: 'Python', icon: '🐍', count: 150, difficulty: 'Easy' },
@@ -73,10 +72,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSmoothScroll();
   setupModal();
   setupMobileMenu();
+
+  // Firebase auth state listener
+  if (typeof initAuthListener === 'function') {
+    initAuthListener(updateUIForAuth);
+  }
 });
 
 // ========== RENDER FUNCTIONS ==========
-
 function getDifficultyBadge(difficulty) {
   const cls = difficulty === 'Easy' ? 'badge-easy' : difficulty === 'Medium' ? 'badge-medium' : 'badge-hard';
   return `<span class="badge ${cls}">${difficulty}</span>`;
@@ -94,14 +97,13 @@ function renderTopics() {
     </div>
   `).join('');
 
-  // Add event listeners to Start Practice buttons
   document.querySelectorAll('.start-topic-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const card = e.target.closest('.topic-card');
       const topicId = parseInt(card.dataset.topicId);
       const topic = topicsData.find(t => t.id === topicId);
       if (topic) {
-        startTest(topic.name, Math.min(topic.count, 15), 10); // 15 questions, 10 minutes
+        startTest(topic.name, Math.min(topic.count, 15), 10);
       }
     });
   });
@@ -170,7 +172,6 @@ function setupSearch() {
     const query = searchInput.value.trim().toLowerCase();
     const cards = document.querySelectorAll('.topic-card');
     let anyVisible = false;
-
     cards.forEach(card => {
       const text = card.textContent.toLowerCase();
       if (query === '' || text.includes(query)) {
@@ -180,7 +181,6 @@ function setupSearch() {
         card.style.display = 'none';
       }
     });
-
     noResults.classList.toggle('visible', !anyVisible && query !== '');
   }
 
@@ -197,9 +197,7 @@ function setupSmoothScroll() {
       const target = document.getElementById(targetId);
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Update hash without jump
         history.pushState(null, null, `#${targetId}`);
-        // Close mobile menu if open
         document.getElementById('mobileMenu').classList.remove('active');
         document.getElementById('hamburger').classList.remove('open');
       }
@@ -207,7 +205,7 @@ function setupSmoothScroll() {
   });
 }
 
-// ========== MODAL (Login/Signup) ==========
+// ========== MODAL (LOGIN / SIGNUP) ==========
 function setupModal() {
   const modalOverlay = document.getElementById('modalOverlay');
   const btnLogin = document.getElementById('btnLogin');
@@ -232,7 +230,6 @@ function setupModal() {
     } else {
       loginForm.style.display = 'none';
       signupForm.style.display = '';
-      // modalTitle is only in login form, so we update the signup form h3
       const signupHeading = signupForm.querySelector('h3');
       if (signupHeading) signupHeading.textContent = 'Sign Up';
     }
@@ -241,7 +238,7 @@ function setupModal() {
   function closeModal() {
     modalOverlay.classList.remove('active');
     modalOverlay.setAttribute('aria-hidden', 'true');
-    // Clear inputs
+    // Clear input fields
     document.querySelectorAll('#loginEmail, #loginPassword, #signupName, #signupEmail, #signupPassword').forEach(el => el.value = '');
   }
 
@@ -267,28 +264,39 @@ function setupModal() {
     document.getElementById('modalTitle').textContent = 'Login';
   });
 
-  // Handle login submit (frontend demo)
-  loginSubmitBtn.addEventListener('click', () => {
+  // --- Firebase Auth Integration ---
+  loginSubmitBtn.addEventListener('click', async () => {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
-    if (email && password) {
-      alert(`Login successful (demo)!\nWelcome, ${email}`);
-      closeModal();
-    } else {
+    if (!email || !password) {
       alert('Please fill in all fields.');
+      return;
+    }
+    try {
+      await loginUser(email, password);
+      closeModal();
+    } catch (error) {
+      alert('Login failed: ' + error.message);
     }
   });
 
-  // Handle signup submit
-  signupSubmitBtn.addEventListener('click', () => {
+  signupSubmitBtn.addEventListener('click', async () => {
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value.trim();
-    if (name && email && password) {
-      alert(`Account created (demo)!\nWelcome, ${name}`);
-      closeModal();
-    } else {
+    if (!name || !email || !password) {
       alert('Please fill in all fields.');
+      return;
+    }
+    if (password.length < 8) {
+      alert('Password must be at least 8 characters.');
+      return;
+    }
+    try {
+      await signupUser(email, password, name);
+      closeModal();
+    } catch (error) {
+      alert('Signup failed: ' + error.message);
     }
   });
 }
@@ -297,13 +305,10 @@ function setupModal() {
 function setupMobileMenu() {
   const hamburger = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobileMenu');
-
   hamburger.addEventListener('click', () => {
     hamburger.classList.toggle('open');
     mobileMenu.classList.toggle('active');
   });
-
-  // Close menu on link click
   mobileMenu.querySelectorAll('a').forEach(link => {
     link.addEventListener('click', () => {
       hamburger.classList.remove('open');
@@ -312,15 +317,61 @@ function setupMobileMenu() {
   });
 }
 
-// ========== TEST LOGIC ==========
+// ========== AUTH UI UPDATE ==========
+function updateUIForAuth(user) {
+  const navActions = document.querySelector('.nav-actions');
+  const mobileActions = document.querySelector('.mobile-actions');
+  if (!navActions || !mobileActions) return;
+
+  if (user) {
+    // User logged in - show Dashboard and Logout
+    navActions.innerHTML = `
+      <button class="btn btn-outline" id="btnDashboard">Dashboard</button>
+      <button class="btn btn-primary" id="btnLogout">Logout</button>
+    `;
+    mobileActions.innerHTML = `
+      <button class="btn btn-outline" id="btnDashboardMobile">Dashboard</button>
+      <button class="btn btn-primary" id="btnLogoutMobile">Logout</button>
+    `;
+    // Add event listeners for dashboard and logout
+    document.getElementById('btnDashboard')?.addEventListener('click', () => {
+      alert('Dashboard feature coming soon!');
+      // In a full app, you'd navigate to a dashboard section
+    });
+    document.getElementById('btnLogout')?.addEventListener('click', () => {
+      logoutUser();
+    });
+    document.getElementById('btnDashboardMobile')?.addEventListener('click', () => {
+      alert('Dashboard feature coming soon!');
+    });
+    document.getElementById('btnLogoutMobile')?.addEventListener('click', () => {
+      logoutUser();
+    });
+  } else {
+    // Not logged in - show Login / Sign Up
+    navActions.innerHTML = `
+      <button class="btn btn-outline" id="btnLogin">Login</button>
+      <button class="btn btn-primary" id="btnSignup">Sign Up</button>
+    `;
+    mobileActions.innerHTML = `
+      <button class="btn btn-outline" id="btnLoginMobile">Login</button>
+      <button class="btn btn-primary" id="btnSignupMobile">Sign Up</button>
+    `;
+    // Rebind modal openers because the buttons are new
+    document.getElementById('btnLogin')?.addEventListener('click', () => openModal('login'));
+    document.getElementById('btnSignup')?.addEventListener('click', () => openModal('signup'));
+    document.getElementById('btnLoginMobile')?.addEventListener('click', () => openModal('login'));
+    document.getElementById('btnSignupMobile')?.addEventListener('click', () => openModal('signup'));
+  }
+}
+
+// ========== TEST LOGIC (unchanged) ==========
 function startTest(topicName, totalQuestions, totalTimeMinutes) {
-  // Generate questions from pool (cycle if needed)
   const questions = [];
   for (let i = 0; i < totalQuestions; i++) {
     const q = questionBank[i % questionBank.length];
     questions.push({ ...q, options: [...q.options] });
   }
-
   testState = {
     active: true,
     questions,
@@ -332,14 +383,11 @@ function startTest(topicName, totalQuestions, totalTimeMinutes) {
     totalQuestions,
     totalTime: totalTimeMinutes * 60,
   };
-
-  // Hide all sections, show test page
   document.querySelectorAll('.section:not(.test-page):not(.results-page)').forEach(s => s.style.display = 'none');
   document.getElementById('testPage').style.display = '';
   document.getElementById('resultsPage').style.display = 'none';
   renderTestQuestion();
   startTimer();
-  // Scroll to test page
   document.getElementById('testPage').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -377,7 +425,6 @@ function renderTestQuestion() {
   const q = testState.questions[idx];
   const progress = ((idx + 1) / testState.totalQuestions) * 100;
   const selected = testState.answers[idx];
-
   container.innerHTML = `
     <div class="test-header">
       <span class="test-title">${testState.topicName} Quiz</span>
@@ -447,15 +494,11 @@ function submitTest() {
   });
   const score = Math.round((correct / testState.totalQuestions) * 100);
   const timeTaken = testState.totalTime - testState.timerSeconds;
-
-  // Store results for display
   window._lastResults = {
     score, correct, incorrect, skipped, total: testState.totalQuestions,
     time: `${Math.floor(timeTaken / 60)}m ${timeTaken % 60}s`,
     review, topic: testState.topicName,
   };
-
-  // Hide test page, show results
   document.getElementById('testPage').style.display = 'none';
   document.getElementById('resultsPage').style.display = '';
   renderResults();
@@ -497,7 +540,6 @@ function renderResults() {
 }
 
 function resetToHome() {
-  // Show all sections again
   document.querySelectorAll('.section:not(.test-page):not(.results-page)').forEach(s => s.style.display = '');
   document.getElementById('testPage').style.display = 'none';
   document.getElementById('resultsPage').style.display = 'none';
