@@ -122,3 +122,110 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); line-he
     .hero-buttons { flex-direction:column; }
     .hero-buttons .btn { width:100%; text-align:center; }
 }
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockly – My Dashboard</title>
+    <link rel="stylesheet" href="Style.css">
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+    <header class="nav" role="banner">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo" aria-label="Mockly Home">Mock<span>ly</span></a>
+            <div class="nav-actions">
+                <button class="btn btn-outline" id="btnLogout">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <section class="section dashboard-page">
+            <div class="dashboard-container">
+                <!-- Profile -->
+                <div class="profile-section">
+                    <div class="avatar-circle" id="avatarInitials">?</div>
+                    <div class="profile-info">
+                        <h2 id="dashboardName">Student</h2>
+                        <p id="dashboardEmail">email@example.com</p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-value" id="dashTestsTaken">12</div>
+                        <div class="stat-label">Tests Taken</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-value" id="dashAvgScore">78%</div>
+                        <div class="stat-label">Avg Score</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-value" id="dashRank">#23</div>
+                        <div class="stat-label">Rank</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">❓</div>
+                        <div class="stat-value" id="dashQuestions">480</div>
+                        <div class="stat-label">Questions</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="actions">
+                    <a href="index.html#exams" class="btn btn-primary">Start a New Test</a>
+                    <a href="index.html#leaderboard" class="btn btn-outline">View Leaderboard</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-bottom">
+                <span>&copy; 2026 Mockly</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase + Dashboard Script -->
+    <script src="firebase.js"></script>
+    <script>
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const displayName = user.displayName || user.email.split('@')[0];
+            const email = user.email;
+            const initial = displayName.charAt(0).toUpperCase();
+
+            document.getElementById('avatarInitials').textContent = initial;
+            document.getElementById('dashboardName').textContent = displayName;
+            document.getElementById('dashboardEmail').textContent = email;
+
+            // Dummy stats (replace with real data later)
+            document.getElementById('dashTestsTaken').textContent = '12';
+            document.getElementById('dashAvgScore').textContent = '78%';
+            document.getElementById('dashRank').textContent = '#23';
+            document.getElementById('dashQuestions').textContent = '480';
+
+            document.getElementById('btnLogout').addEventListener('click', async () => {
+                await firebase.auth().signOut();
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>
