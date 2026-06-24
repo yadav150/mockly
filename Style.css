@@ -165,11 +165,14 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); line-he
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.4rem;
-    font-weight: 700;
-    color: var(--accent);
     flex-shrink: 0;
     border: 3px solid var(--accent);
+    color: var(--accent);
+    overflow: hidden;   /* ensure SVG doesn't bleed */
+}
+.avatar-circle .avatar-silhouette {
+    width: 56px;
+    height: 56px;
 }
 .profile-info h2 {
     font-size: 1.5rem;
@@ -267,6 +270,50 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); line-he
 }
 .dashboard-actions .btn {
     min-width: 180px;
+}
+
+/* Logout Popup (fade-in animation) */
+.logout-popup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+}
+.logout-popup-overlay.active {
+    display: flex;
+}
+.logout-popup {
+    background: #fff;
+    padding: 2rem 2.5rem;
+    border-radius: var(--radius);
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    animation: fadeInScale 0.25s ease;
+}
+.logout-checkmark {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 1rem;
+}
+.logout-popup p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+@keyframes fadeInScale {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 /* Responsive */
