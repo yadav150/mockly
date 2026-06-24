@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mockly – SSC GD Mock Test</title>
+    <!-- Firebase Compat SDKs (must be loaded before firebase.js) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <style>
         :root {
             --bg: #f8f9fb;
@@ -22,6 +25,38 @@
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:var(--font); background:var(--bg); color:var(--text); line-height:1.6; }
+
+        /* ---------- LOADING OVERLAY ---------- */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .loading-overlay.active { display: flex; }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 6px solid var(--accent-light);
+            border-top: 6px solid var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            font-weight: 600;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        /* ---------- TEST STYLES ---------- */
         .test-wrapper { max-width:800px; margin:2rem auto; padding:0 1rem; }
         .test-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; background:#fff; padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow-sm); margin-bottom:1.5rem; border:1px solid var(--border); }
         .test-title { font-size:1.3rem; font-weight:700; }
@@ -68,8 +103,14 @@
     </style>
 </head>
 <body>
+    <!-- Loading overlay (blur background + spinner) -->
+    <div class="loading-overlay active" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p class="loading-text">Preparing your test…</p>
+    </div>
+
     <div class="test-wrapper">
-        <div id="testArea">
+        <div id="testArea" style="display:none;">
             <div class="test-header">
                 <span class="test-title">SSC GD Mock Test</span>
                 <span class="timer" id="timer">10:00</span>
@@ -93,8 +134,11 @@
         <div id="resultsArea" style="display:none;"></div>
     </div>
 
+    <!-- Firebase shared config & auth functions -->
+    <script src="firebase.js"></script>
+
     <script>
-        // ----- SSC GD Questions -----
+        // ================== SSC GD EXAM DATA ==================
         const examName = 'SSC GD';
         const examDuration = 10; // minutes
         const questions = [
@@ -110,14 +154,15 @@
             { q: 'The largest ocean in the world is?', options: ['Atlantic', 'Indian', 'Arctic', 'Pacific'], correct: 3 }
         ];
 
-        // ----- Test Engine -----
+        // ================== SHARED TEST ENGINE ==================
         const STORAGE_KEY = 'mocklyTestHistory';
         let currentIndex = 0;
         let answers = {};
         let timerInterval = null;
         let timeRemaining = examDuration * 60;
 
-        // Elements
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const testArea = document.getElementById('testArea');
         const timerEl = document.getElementById('timer');
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
@@ -128,10 +173,9 @@
         const nextBtn = document.getElementById('nextBtn');
         const skipBtn = document.getElementById('skipBtn');
         const submitBtn = document.getElementById('submitBtn');
-        const testArea = document.getElementById('testArea');
         const resultsArea = document.getElementById('resultsArea');
 
-        // Helpers
+        // ---- LocalStorage helpers ----
         function getHistory() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e) { return []; } }
         function saveHistory(h) { localStorage.setItem(STORAGE_KEY, JSON.stringify(h)); }
         function saveResult(exam, score, total, status) {
@@ -142,8 +186,9 @@
             if (hist.length > 20) hist.splice(0, hist.length - 20);
             saveHistory(hist);
         }
-        function formatTime(s) { const m=Math.floor(s/60), sec=s%60; return `${m}:${sec.toString().padStart(2,'0')}`; }
 
+        // ---- Timer ----
+        function formatTime(s) { const m=Math.floor(s/60), sec=s%60; return `${m}:${sec.toString().padStart(2,'0')}`; }
         function startTimer() {
             timeRemaining = examDuration * 60;
             updateTimerDisplay();
@@ -157,6 +202,8 @@
             timerEl.textContent = formatTime(timeRemaining);
             timerEl.classList.toggle('warning', timeRemaining < 60);
         }
+
+        // ---- Question rendering ----
         function updateProgress() {
             const cnt = Object.keys(answers).length;
             progressFill.style.width = (cnt / questions.length * 100) + '%';
@@ -184,15 +231,12 @@
             }
             skipBtn.style.display = 'inline-block';
         }
-        function selectOption(optIdx) {
-            answers[currentIndex] = optIdx;
-            updateProgress();
-            renderQuestion();
-        }
+        function selectOption(optIdx) { answers[currentIndex] = optIdx; updateProgress(); renderQuestion(); }
         function nextQuestion() { if (currentIndex < questions.length-1) { currentIndex++; renderQuestion(); } }
         function prevQuestion() { if (currentIndex > 0) { currentIndex--; renderQuestion(); } }
         function skipQuestion() { if (currentIndex < questions.length-1) { currentIndex++; renderQuestion(); } }
 
+        // ---- Submit & Results ----
         function submitTest() {
             clearInterval(timerInterval);
             const correctCount = questions.reduce((sum, q, i) => sum + (answers[i] === q.correct ? 1 : 0), 0);
@@ -201,10 +245,8 @@
             const score = Math.round((correctCount / questions.length) * 100);
             const timeTaken = (examDuration * 60) - timeRemaining;
 
-            // Save result (will appear in dashboard)
             saveResult(examName, score, questions.length);
 
-            // Show results
             testArea.style.display = 'none';
             resultsArea.style.display = 'block';
             resultsArea.innerHTML = `
@@ -226,20 +268,34 @@
             `;
         }
 
-        // Event Listeners
+        // ---- Event Listeners ----
         prevBtn.addEventListener('click', prevQuestion);
         nextBtn.addEventListener('click', nextQuestion);
         skipBtn.addEventListener('click', skipQuestion);
         submitBtn.addEventListener('click', submitTest);
 
-        // Start
-        if (questions.length === 0) {
-            testArea.innerHTML = '<p style="text-align:center; padding:2rem;">No questions available.</p>';
-        } else {
-            startTimer();
-            updateProgress();
-            renderQuestion();
-        }
+        // ---- AUTH CHECK & STARTUP ----
+        window.addEventListener('DOMContentLoaded', () => {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (!user) {
+                    // Not logged in → redirect to signup page
+                    window.location.href = 'signup.html';
+                    return;
+                }
+
+                // User is logged in → show spinner, then start test
+                loadingOverlay.classList.add('active');
+                testArea.style.display = 'none';
+
+                setTimeout(() => {
+                    loadingOverlay.classList.remove('active');
+                    testArea.style.display = '';
+                    startTimer();
+                    updateProgress();
+                    renderQuestion();
+                }, 2000); // 2‑second loading animation
+            });
+        });
     </script>
 </body>
 </html>
