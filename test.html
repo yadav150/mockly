@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockly – Test</title>
+    <link rel="stylesheet" href="Style.css">
+    <link rel="stylesheet" href="test-style.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header class="nav" role="banner">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo" aria-label="Mockly Home">Mock<span>ly</span></a>
+            <div class="nav-actions nav-actions-visible">
+                <a href="index.html" class="btn btn-outline">Home</a>
+                <a href="dashboard.html" class="btn btn-primary">Dashboard</a>
+            </div>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <section class="section test-page">
+            <div class="container">
+                <!-- Test info bar -->
+                <div class="test-info-bar">
+                    <div class="test-exam-name" id="testExamName">Loading…</div>
+                    <div class="test-timer" id="testTimer">15:00</div>
+                    <div class="test-progress" id="testProgress">Question 0 / 0</div>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="progress-bar-wrap">
+                    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+                </div>
+
+                <!-- Question area (dynamically filled) -->
+                <div class="question-area" id="questionArea">
+                    <p class="question-text" id="questionText"></p>
+                    <div class="options-list" id="optionsList"></div>
+                </div>
+
+                <!-- Navigation buttons -->
+                <div class="test-nav-buttons">
+                    <button class="btn btn-outline" id="btnPrev" disabled>← Previous</button>
+                    <button class="btn btn-outline" id="btnSkip">Skip</button>
+                    <button class="btn btn-primary" id="btnNext">Next →</button>
+                    <button class="btn btn-submit" id="btnSubmit" style="display:none;">Submit Test</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scoreboard (hidden until test ends) -->
+        <section class="section scoreboard-section" id="scoreboardSection" style="display:none;">
+            <div class="container">
+                <div class="scoreboard-card">
+                    <h2>Test Completed!</h2>
+                    <div class="score-circle" id="scoreCircle">0%</div>
+                    <p id="scoreMessage"></p>
+                    <div class="score-stats">
+                        <div class="stat-item"><span class="stat-val" id="statCorrect">0</span><span class="stat-lbl">Correct</span></div>
+                        <div class="stat-item"><span class="stat-val" id="statIncorrect">0</span><span class="stat-lbl">Incorrect</span></div>
+                        <div class="stat-item"><span class="stat-val" id="statSkipped">0</span><span class="stat-lbl">Skipped</span></div>
+                        <div class="stat-item"><span class="stat-val" id="statTime">0:00</span><span class="stat-lbl">Time Taken</span></div>
+                    </div>
+                    <div class="scoreboard-actions">
+                        <a href="dashboard.html" class="btn btn-primary">View Dashboard</a>
+                        <a href="index.html#exams" class="btn btn-outline">Take Another Test</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-bottom">
+                <span>&copy; 2026 Mockly</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="firebase.js"></script>
+    <script src="test-script.js"></script>
+</body>
+</html>
