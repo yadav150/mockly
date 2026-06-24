@@ -132,9 +132,15 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); line-he
 }
 /* ===== DASHBOARD ENHANCEMENTS ===== */
 
-/* Make logout & home buttons always visible */
+/* Force logout & home buttons to stay visible on all screens */
 .nav-actions-visible {
     display: flex !important;
+}
+/* Extra safety for mobile */
+@media (max-width: 768px) {
+    .nav-actions-visible {
+        display: flex !important;
+    }
 }
 
 .dashboard-page {
@@ -338,11 +344,5 @@ body { font-family:var(--font); background:var(--bg); color:var(--text); line-he
 @media (max-width: 400px) {
     .stats-grid {
         grid-template-columns: 1fr;
-    }
-}
-/* Override mobile hide for dashboard header */
-@media (max-width: 768px) {
-    .nav-actions-visible {
-        display: flex !important;
     }
 }
