@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockly – Login</title>
+    <link rel="stylesheet" href="Style.css">
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <header class="nav" role="banner">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo" aria-label="Mockly Home">Mock<span>ly</span></a>
+        </div>
+    </header>
+
+    <main>
+        <section class="section">
+            <div class="container">
+                <div class="form-page">
+                    <h2>Login</h2>
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password">
+                    </div>
+                    <!-- CAPTCHA -->
+                    <div class="form-group captcha-group">
+                        <label>Security Check</label>
+                        <div class="captcha-box">
+                            <span id="captchaQuestionLogin">3 + 5 = ?</span>
+                            <input type="text" id="captchaInputLogin" placeholder="Answer" autocomplete="off">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="loginSubmitBtn">Login</button>
+                    <div class="google-btn-wrap">
+                        <button class="btn google-btn" id="googleSignInBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="..."/></svg>
+                            Sign in with Google
+                        </button>
+                    </div>
+                    <p class="form-alt-link">
+                        <a href="forgot-password.html">Forgot password?</a>
+                    </p>
+                    <p class="form-alt-link">Don't have an account? <a href="signup.html">Sign Up</a></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <span>&copy; 2026 Mockly</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase + Custom Script -->
+    <script src="firebase.js"></script>
+    <script>
+        let loginCaptchaAnswer = '';
+
+        function generateCaptcha() {
+            const a = Math.floor(Math.random() * 12) + 1;
+            const b = Math.floor(Math.random() * 12) + 1;
+            return { question: `${a} + ${b} = ?`, answer: (a + b).toString() };
+        }
+
+        function refreshCaptcha() {
+            const cap = generateCaptcha();
+            loginCaptchaAnswer = cap.answer;
+            document.getElementById('captchaQuestionLogin').textContent = cap.question;
+            document.getElementById('captchaInputLogin').value = '';
+        }
+
+        // Initial captcha
+        refreshCaptcha();
+
+        document.getElementById('loginSubmitBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const captcha = document.getElementById('captchaInputLogin').value.trim();
+            if (!email || !password) return alert('Please fill all fields.');
+            if (captcha !== loginCaptchaAnswer) {
+                alert('Incorrect CAPTCHA');
+                refreshCaptcha();
+                return;
+            }
+            try {
+                await loginUser(email, password);
+                window.location.href = 'dashboard.html';
+            } catch (e) { alert('Login failed: ' + e.message); }
+        });
+
+        document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+            try {
+                await signInWithGoogle();
+                window.location.href = 'dashboard.html';
+            } catch (e) { alert('Google sign-in failed: ' + e.message); }
+        });
+    </script>
+</body>
+</html>
