@@ -14,7 +14,6 @@
     <header class="nav" role="banner">
         <div class="nav-inner">
             <a href="index.html" class="nav-logo" aria-label="Mockly Home">Mock<span>ly</span></a>
-            <!-- IMPORTANT: nav-actions-visible keeps logout always visible -->
             <div class="nav-actions nav-actions-visible">
                 <a href="index.html" class="btn btn-outline">Home</a>
                 <button class="btn btn-primary" id="btnLogout">Logout</button>
@@ -39,7 +38,7 @@
                     </div>
                 </div>
 
-                <!-- Stats Grid -->
+                <!-- Stats Grid (real data only) -->
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-icon">📝</div>
@@ -113,6 +112,6 @@
     <!-- Firebase shared config & auth functions -->
     <script src="firebase.js"></script>
     <!-- Dashboard specific logic -->
-    <script src="dash-script.js"></script>
+    <script src="js/dash-script.js"></script>
 </body>
 </html>
