@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockly – Sign Up</title>
+    <link rel="stylesheet" href="Style.css">
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <header class="nav" role="banner">
+        <div class="nav-inner">
+            <a href="index.html" class="nav-logo" aria-label="Mockly Home">Mock<span>ly</span></a>
+        </div>
+    </header>
+
+    <main>
+        <section class="section">
+            <div class="container">
+                <div class="form-page">
+                    <h2>Sign Up</h2>
+                    <div class="form-group">
+                        <label for="signupName">Full Name</label>
+                        <input type="text" id="signupName" placeholder="Your full name" autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" placeholder="you@example.com" autocomplete="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" placeholder="Create a password" autocomplete="new-password">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupConfirm">Confirm Password</label>
+                        <input type="password" id="signupConfirm" placeholder="Re-enter password" autocomplete="new-password">
+                    </div>
+                    <!-- CAPTCHA -->
+                    <div class="form-group captcha-group">
+                        <label>Security Check</label>
+                        <div class="captcha-box">
+                            <span id="captchaQuestionSignup">7 + 2 = ?</span>
+                            <input type="text" id="captchaInputSignup" placeholder="Answer" autocomplete="off">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="signupSubmitBtn">Create Account</button>
+                    <div class="google-btn-wrap">
+                        <button class="btn google-btn" id="googleSignUpBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24">...</svg>
+                            Sign up with Google
+                        </button>
+                    </div>
+                    <p class="form-alt-link">Already have an account? <a href="login.html">Login</a></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <span>&copy; 2026 Mockly</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase + Custom Script -->
+    <script src="firebase.js"></script>
+    <script>
+        let signupCaptchaAnswer = '';
+
+        function generateCaptcha() {
+            const a = Math.floor(Math.random() * 12) + 1;
+            const b = Math.floor(Math.random() * 12) + 1;
+            return { question: `${a} + ${b} = ?`, answer: (a + b).toString() };
+        }
+
+        function refreshCaptcha() {
+            const cap = generateCaptcha();
+            signupCaptchaAnswer = cap.answer;
+            document.getElementById('captchaQuestionSignup').textContent = cap.question;
+            document.getElementById('captchaInputSignup').value = '';
+        }
+
+        refreshCaptcha();
+
+        document.getElementById('signupSubmitBtn').addEventListener('click', async () => {
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+            const confirm = document.getElementById('signupConfirm').value.trim();
+            const captcha = document.getElementById('captchaInputSignup').value.trim();
+            if (!name || !email || !password || !confirm) return alert('All fields required.');
+            if (password !== confirm) return alert('Passwords do not match.');
+            if (password.length < 8) return alert('Password must be at least 8 characters.');
+            if (captcha !== signupCaptchaAnswer) {
+                alert('Incorrect CAPTCHA');
+                refreshCaptcha();
+                return;
+            }
+            try {
+                await signupUser(email, password, name);
+                window.location.href = 'dashboard.html';
+            } catch (e) { alert('Signup failed: ' + e.message); }
+        });
+
+        document.getElementById('googleSignUpBtn').addEventListener('click', async () => {
+            try {
+                await signInWithGoogle();
+                window.location.href = 'dashboard.html';
+            } catch (e) { alert('Google sign-up failed: ' + e.message); }
+        });
+    </script>
+</body>
+</html>
